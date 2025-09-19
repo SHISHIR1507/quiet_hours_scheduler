@@ -4,12 +4,32 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 export default function DashboardPage() {
   const router = useRouter();
   const [blocks, setBlocks] = useState([]);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("info");
 
   // Check session
   useEffect(() => {
@@ -45,6 +65,7 @@ export default function DashboardPage() {
     setMessage("");
 
     if (!startTime || !endTime) {
+      setMessageType("error");
       setMessage("⚠️ Please select both start and end times.");
       return;
     }
@@ -67,79 +88,108 @@ export default function DashboardPage() {
     const json = await res.json();
 
     if (res.ok) {
+      setMessageType("success");
       setMessage("✅ Block added successfully!");
       setStartTime("");
       setEndTime("");
       fetchBlocks();
     } else {
+      setMessageType("error");
       setMessage("❌ " + (json.error || "Something went wrong"));
     }
   };
 
+  // Logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/auth");
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-      <p className="text-gray-600 mb-6">Add your quiet-hour study blocks 👇</p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-red-500">📚 Quiet Hours Dashboard</h1>
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+        >
+          Logout
+        </button>
+      </div>
 
       {/* Form */}
-      <form onSubmit={handleAddBlock} className="space-y-4 bg-white shadow-md rounded-lg p-4 mb-6">
-        <div>
-          <label className="block text-sm font-medium mb-1">Start Time</label>
-          <input
-            type="datetime-local"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="w-full p-2 border rounded-md"
-          />
-        </div>
+      <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Add New Quiet Hour Block</h2>
+        <form onSubmit={handleAddBlock} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Start Time</label>
+            <input
+              type="datetime-local"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">End Time</label>
-          <input
-            type="datetime-local"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="w-full p-2 border rounded-md"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">End Time</label>
+            <input
+              type="datetime-local"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition"
-        >
-          Add Block
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+          >
+            Add Block
+          </button>
+        </form>
 
-      {message && (
-        <p className="mb-4 text-center text-sm text-gray-700">{message}</p>
-      )}
+        {message && (
+          <div
+            className={`mt-4 p-3 rounded-md text-sm ${
+              messageType === "success"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {message}
+          </div>
+        )}
+      </div>
 
-      {/* Blocks Table */}
-      <h2 className="text-xl font-semibold mb-2">Your Blocks</h2>
+      {/* Table */}
+      <h2 className="text-xl font-semibold mb-3">Your Quiet Hour Blocks</h2>
       {blocks.length === 0 ? (
-        <p className="text-gray-500">No blocks yet.</p>
+        <p className="text-gray-500">No blocks yet. Add one above 👆</p>
       ) : (
-        <table className="w-full border-collapse border">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-4 py-2 text-left">Start</th>
-              <th className="border px-4 py-2 text-left">End</th>
-            </tr>
-          </thead>
-          <tbody>
-            {blocks.map((b) => (
-              <tr key={b._id} className="hover:bg-gray-50">
-                <td className="border px-4 py-2">
-                  {new Date(b.startTime).toLocaleString()}
-                </td>
-                <td className="border px-4 py-2">
-                  {new Date(b.endTime).toLocaleString()}
-                </td>
+        <div className="overflow-x-auto bg-white shadow rounded-lg">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2 text-left">Start</th>
+                <th className="px-4 py-2 text-left">End</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {blocks.map((b) => (
+                <tr key={b._id} className="hover:bg-gray-50">
+                  <td className="border-t px-4 py-2">
+                    {new Date(b.startTime).toLocaleString()}
+                  </td>
+                  <td className="border-t px-4 py-2">
+                    {new Date(b.endTime).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
