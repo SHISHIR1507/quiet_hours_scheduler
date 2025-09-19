@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,182 +14,128 @@ import {
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [blocks, setBlocks] = useState([]);
+  const [quietHours, setQuietHours] = useState([]);
+  const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("info");
 
-  // Check session
+  // ✅ Redirect if not logged in
   useEffect(() => {
-    const checkUser = async () => {
+    const getSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push("/auth");
-      }
+      if (!data.session) router.push("/auth");
     };
-    checkUser();
+    getSession();
   }, [router]);
 
-  // Fetch blocks
-  const fetchBlocks = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const res = await fetch("/api/getBlocks", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
-
-    const json = await res.json();
-    setBlocks(json);
-  };
-
-  useEffect(() => {
-    fetchBlocks();
-  }, []);
-
-  // Add block
-  const handleAddBlock = async (e) => {
-    e.preventDefault();
-    setMessage("");
-
-    if (!startTime || !endTime) {
-      setMessageType("error");
-      setMessage("⚠️ Please select both start and end times.");
-      return;
-    }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.push("/auth");
-      return;
-    }
-
-    const res = await fetch("/api/addBlock", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ startTime, endTime }),
-    });
-
-    const json = await res.json();
-
-    if (res.ok) {
-      setMessageType("success");
-      setMessage("✅ Block added successfully!");
-      setStartTime("");
-      setEndTime("");
-      fetchBlocks();
-    } else {
-      setMessageType("error");
-      setMessage("❌ " + (json.error || "Something went wrong"));
-    }
-  };
-
-  // Logout
+  // ✅ Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/auth");
   };
 
+  // ✅ Add Quiet Hour block
+  const handleAddQuietHour = (e) => {
+    e.preventDefault();
+
+    if (!date || !startTime || !endTime) return;
+
+    const newBlock = { id: Date.now(), date, startTime, endTime };
+    setQuietHours([...quietHours, newBlock]);
+
+    setDate("");
+    setStartTime("");
+    setEndTime("");
+  };
+
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-red-500">📚 Quiet Hours Dashboard</h1>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-        >
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">📅 Quiet Hours Dashboard</h1>
+        <Button variant="destructive" onClick={handleLogout}>
           Logout
-        </button>
+        </Button>
       </div>
 
-      {/* Form */}
-      <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Add New Quiet Hour Block</h2>
-        <form onSubmit={handleAddBlock} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Start Time</label>
-            <input
-              type="datetime-local"
+      {/* Add Quiet Hour Form */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Add Quiet Hour</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={handleAddQuietHour}
+            className="flex gap-4 items-center flex-wrap"
+          >
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+            <Input
+              type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+              required
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">End Time</label>
-            <input
-              type="datetime-local"
+            <Input
+              type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+              required
             />
-          </div>
+            <Button type="submit">Add</Button>
+          </form>
+        </CardContent>
+      </Card>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
-          >
-            Add Block
-          </button>
-        </form>
-
-        {message && (
-          <div
-            className={`mt-4 p-3 rounded-md text-sm ${
-              messageType === "success"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {message}
-          </div>
-        )}
-      </div>
-
-      {/* Table */}
-      <h2 className="text-xl font-semibold mb-3">Your Quiet Hour Blocks</h2>
-      {blocks.length === 0 ? (
-        <p className="text-gray-500">No blocks yet. Add one above 👆</p>
-      ) : (
-        <div className="overflow-x-auto bg-white shadow rounded-lg">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-4 py-2 text-left">Start</th>
-                <th className="px-4 py-2 text-left">End</th>
-              </tr>
-            </thead>
-            <tbody>
-              {blocks.map((b) => (
-                <tr key={b._id} className="hover:bg-gray-50">
-                  <td className="border-t px-4 py-2">
-                    {new Date(b.startTime).toLocaleString()}
-                  </td>
-                  <td className="border-t px-4 py-2">
-                    {new Date(b.endTime).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Quiet Hours Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>My Quiet Hours</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Start</TableHead>
+                <TableHead>End</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {quietHours.length > 0 ? (
+                quietHours.map((block) => (
+                  <TableRow key={block.id}>
+                    <TableCell>{block.date}</TableCell>
+                    <TableCell>{block.startTime}</TableCell>
+                    <TableCell>{block.endTime}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={3}
+                    className="text-center text-gray-500"
+                  >
+                    No quiet hours added yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
