@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -12,7 +20,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Sign up new user
+  // Signup hai 
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,21 +30,18 @@ export default function AuthPage() {
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage("✅ Signup successful! Please check your email to confirm.");
+      setMessage("✅ Signup successful! Please check your email.");
     }
 
     setLoading(false);
   };
 
-  // Login existing user
+  // Login hai
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setMessage(error.message);
@@ -49,77 +54,55 @@ export default function AuthPage() {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "400px",
-        margin: "5rem auto",
-        padding: "2rem",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        backgroundColor: "#f9f9f9",
-      }}
-    >
-      <h1 style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-        Quiet Hours Login
-      </h1>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <Card className="w-[400px]">
+        <CardHeader>
+          <CardTitle className="text-center">Quiet Hours Login</CardTitle>
+        </CardHeader>
 
-      <form style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <label>Email</label>
-        <input
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc" }}
-        />
+        <CardContent>
+          <form className="flex flex-col gap-4">
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
 
-        <label>Password</label>
-        <input
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc" }}
-        />
+            <Input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          style={{
-            padding: "0.75rem",
-            backgroundColor: "#0070f3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleLogin}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? "Logging in..." : "Login"}
+              </Button>
 
-        <button
-          onClick={handleSignup}
-          disabled={loading}
-          style={{
-            padding: "0.75rem",
-            backgroundColor: "#10b981",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          {loading ? "Signing up..." : "Signup"}
-        </button>
-      </form>
+              <Button
+                onClick={handleSignup}
+                disabled={loading}
+                variant="secondary"
+                className="w-full"
+              >
+                {loading ? "Signing up..." : "Signup"}
+              </Button>
+            </div>
+          </form>
 
-      {message && (
-        <p style={{ marginTop: "1rem", textAlign: "center", color: "red" }}>
-          {message}
-        </p>
-      )}
+          {message && (
+            <p className="text-center text-sm text-red-500 mt-4">{message}</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
