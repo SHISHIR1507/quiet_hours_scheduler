@@ -37,21 +37,32 @@ export default function AuthPage() {
   };
 
   // Login hai
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const {
+    data: { session, user },
+    error,
+  } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage("✅ Login successful! Redirecting...");
-      router.push("/dashboard");
-    }
+  if (error) {
+    setMessage(error.message);
+  } else {
+    // 👇 now works
+    console.log("Access Token:", session?.access_token);
+    console.log("User ID:", user?.id);
 
-    setLoading(false);
-  };
+    setMessage("✅ Login successful! Redirecting...");
+    router.push("/dashboard");
+  }
+
+  setLoading(false);
+};
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">

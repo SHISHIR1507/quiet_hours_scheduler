@@ -1,5 +1,7 @@
 import clientPromise from "@/lib/mongodb";
 import { supabase } from "@/lib/supabaseClient";
+import { ObjectId } from "mongodb";
+
 
 export async function GET(req) {
   try {
@@ -17,7 +19,6 @@ export async function GET(req) {
       return Response.json({ error: "Invalid user" }, { status: 401 });
     }
 
-    // ✅ Fetch quiet hours for logged-in user
     const quietHours = await collection.find({ userId: user.id }).toArray();
 
     return Response.json(quietHours, { status: 200 });
@@ -42,14 +43,13 @@ export async function POST(req) {
       return Response.json({ error: "Invalid user" }, { status: 401 });
     }
 
-    // ✅ Parse request body
     const { date, startTime, endTime } = await req.json();
     if (!date || !startTime || !endTime) {
       return Response.json({ error: "Missing fields" }, { status: 400 });
     }
 
     const result = await collection.insertOne({
-      userId: user.id, // 👈 always take from verified user
+      userId: user.id, 
       date,
       startTime,
       endTime,
