@@ -26,34 +26,90 @@ export default function DashboardPage() {
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [editId, setEditId] = useState(null); 
 
-  // ✅ Redirect if not logged in
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session) router.push("/auth");
+      else fetchQuietHours(data.session.access_token);
     };
     getSession();
   }, [router]);
 
-  // ✅ Logout
+  const fetchQuietHours = async (token) => {
+    const res = await fetch("/api/quiet-hours", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    setQuietHours(data);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/auth");
   };
 
-  // ✅ Add Quiet Hour block
-  const handleAddQuietHour = (e) => {
+  const handleSaveQuietHour = async (e) => {
     e.preventDefault();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
 
-    if (!date || !startTime || !endTime) return;
+    const token = session.access_token;
 
-    const newBlock = { id: Date.now(), date, startTime, endTime };
-    setQuietHours([...quietHours, newBlock]);
+    if (editId) {
+
+      await fetch(`/api/quiet-hours/${editId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ date, startTime, endTime }),
+      });
+      setEditId(null);
+    } else {
+
+      await fetch("/api/quiet-hours", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ date, startTime, endTime }),
+      });
+    }
 
     setDate("");
     setStartTime("");
     setEndTime("");
+    fetchQuietHours(token);
+  };
+
+  const handleEdit = (block) => {
+    setEditId(block._id);
+    setDate(block.date);
+    setStartTime(block.startTime);
+    setEndTime(block.endTime);
+  };
+
+  // ❌ Delete
+  const handleDelete = async (id) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const token = session.access_token;
+
+    await fetch(`/api/quiet-hours/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    fetchQuietHours(token);
   };
 
   return (
@@ -66,14 +122,13 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {/* Add Quiet Hour Form */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Add Quiet Hour</CardTitle>
+          <CardTitle>{editId ? "Edit Quiet Hour" : "Add Quiet Hour"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={handleAddQuietHour}
+            onSubmit={handleSaveQuietHour}
             className="flex gap-4 items-center flex-wrap"
           >
             <Input
@@ -94,12 +149,11 @@ export default function DashboardPage() {
               onChange={(e) => setEndTime(e.target.value)}
               required
             />
-            <Button type="submit">Add</Button>
+            <Button type="submit">{editId ? "Update" : "Add"}</Button>
           </form>
         </CardContent>
       </Card>
 
-      {/* Quiet Hours Table */}
       <Card>
         <CardHeader>
           <CardTitle>My Quiet Hours</CardTitle>
@@ -111,21 +165,36 @@ export default function DashboardPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Start</TableHead>
                 <TableHead>End</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {quietHours.length > 0 ? (
                 quietHours.map((block) => (
-                  <TableRow key={block.id}>
+                  <TableRow key={block._id}>
                     <TableCell>{block.date}</TableCell>
                     <TableCell>{block.startTime}</TableCell>
                     <TableCell>{block.endTime}</TableCell>
+                    <TableCell className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleEdit(block)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleDelete(block._id)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={3}
+                    colSpan={4}
                     className="text-center text-gray-500"
                   >
                     No quiet hours added yet.
