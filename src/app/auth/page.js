@@ -17,13 +17,13 @@ export default function AuthPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Signup hai 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSigningUp(true);
 
     const { error } = await supabase.auth.signUp({ email, password });
 
@@ -33,35 +33,33 @@ export default function AuthPage() {
       setMessage("✅ Signup successful! Please check your email.");
     }
 
-    setLoading(false);
+    setIsSigningUp(false);
   };
 
-  // Login hai
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
 
-  const {
-    data: { session, user },
-    error,
-  } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+    const {
+      data: { session, user },
+      error,
+    } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error) {
-    setMessage(error.message);
-  } else {
-    console.log("Access Token:", session?.access_token);
-    console.log("User ID:", user?.id);
+    if (error) {
+      setMessage(error.message);
+    } else {
+      console.log("Access Token:", session?.access_token);
+      console.log("User ID:", user?.id);
 
-    setMessage("✅ Login successful! Redirecting...");
-    router.push("/dashboard");
-  }
+      setMessage("✅ Login successful! Redirecting...");
+      router.push("/dashboard");
+    }
 
-  setLoading(false);
-};
-
+    setIsLoggingIn(false);
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -91,19 +89,19 @@ const handleLogin = async (e) => {
             <div className="flex gap-2">
               <Button
                 onClick={handleLogin}
-                disabled={loading}
+                disabled={isLoggingIn}
                 className="w-full"
               >
-                {loading ? "Logging in..." : "Login"}
+                {isLoggingIn ? "Logging in..." : "Login"}
               </Button>
 
               <Button
                 onClick={handleSignup}
-                disabled={loading}
+                disabled={isSigningUp}
                 variant="secondary"
                 className="w-full"
               >
-                {loading ? "Signing up..." : "Signup"}
+                {isSigningUp ? "Signing up..." : "Signup"}
               </Button>
             </div>
           </form>

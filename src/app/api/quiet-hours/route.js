@@ -47,7 +47,7 @@ export async function POST(req) {
     const db = client.db("quiet_hours_db");
     const collection = db.collection("quiet_hours");
 
-    // 🔒 Auth check
+    // Auth check validations
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!token) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -75,7 +75,7 @@ export async function POST(req) {
       createdAt: new Date(),
     });
 
-    //  Mirror into Supabase for cron jobs
+    //  Mirror into Supabase for cron jobs 
     await supabase.from("quiet_hours").insert([
       {
         user_id: user.id,
