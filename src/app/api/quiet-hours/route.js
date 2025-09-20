@@ -2,7 +2,6 @@ import clientPromise from "@/lib/mongodb";
 import { supabase } from "@/lib/supabaseClient";
 import { ObjectId } from "mongodb";
 
-
 export async function GET(req) {
   try {
     const client = await clientPromise;
@@ -48,13 +47,24 @@ export async function POST(req) {
       return Response.json({ error: "Missing fields" }, { status: 400 });
     }
 
+    // 👉 Save to MongoDB
     const result = await collection.insertOne({
-      userId: user.id, 
+      userId: user.id,
       date,
       startTime,
       endTime,
       createdAt: new Date(),
     });
+
+    // 👉 Mirror into Supabase for cron jobs
+    await supabase.from("quiet_hours").insert([
+      {
+        user_id: user.id,
+        user_email: user.email,
+        start_ts: new Date(`${date}T${startTime}`),
+        end_ts: new Date(`${date}T${endTime}`),
+      },
+    ]);
 
     return Response.json({ insertedId: result.insertedId }, { status: 201 });
   } catch (err) {
