@@ -2,7 +2,6 @@ import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { supabase } from "@/lib/supabaseClient";
 
-// ✅ DELETE - MongoDB + Supabase
 export async function DELETE(req, { params }) {
   try {
     const { id } = params;
@@ -27,7 +26,7 @@ export async function DELETE(req, { params }) {
   }
 }
 
-// ✅ PUT - MongoDB + Supabase
+
 export async function PUT(req, { params }) {
   try {
     const { id } = params;

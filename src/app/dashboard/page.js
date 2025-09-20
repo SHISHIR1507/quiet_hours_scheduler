@@ -95,7 +95,7 @@ export default function DashboardPage() {
     setEndTime(block.endTime);
   };
 
-  // ❌ Delete
+  // Delete
   const handleDelete = async (id) => {
     const {
       data: { session },

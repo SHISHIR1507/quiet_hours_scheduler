@@ -52,7 +52,6 @@ const handleLogin = async (e) => {
   if (error) {
     setMessage(error.message);
   } else {
-    // 👇 now works
     console.log("Access Token:", session?.access_token);
     console.log("User ID:", user?.id);
 
